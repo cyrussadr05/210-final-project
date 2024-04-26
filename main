@@ -1,0 +1,37 @@
+use csv::{ReaderBuilder, Trim};
+use std::error::Error;
+use std::fs::File;
+use std::io;
+use std::collections::{HashMap, VecDeque, HashSet};
+
+fn read_data() -> Result<(), Box<dyn Error>> {
+    let file = File::open("data.csv")?;
+    let mut rdr = ReaderBuilder::new()
+        .has_headers(true)
+        .flexible(true)
+        .trim(Trim::All)
+        .from_reader(file);
+
+    for result in rdr.records() {
+        let record = result?;
+        let id = &record[0];
+        let friends_str = &record[9]; // Assuming 'friends' is always the last field
+
+        // Manually process the friends list to accommodate irregular formats
+        let friends_cleaned = friends_str
+            .trim_matches(|c: char| c == '[' || c == ']' || c == '"')
+            .replace("\"", "");  // Remove all inner double quotes to handle irregular quoting
+
+        let friends: Vec<&str> = friends_cleaned
+            .split(',')
+            .map(|s| s.trim()) // Trim whitespace from each element
+            .filter(|s| !s.is_empty()) // Ensure no empty strings are included
+            .collect();
+
+        for friend in &friends {
+            println!("({}, {})", id, friend);
+        }
+    }
+
+    Ok(())
+}
